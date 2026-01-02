@@ -1,0 +1,80 @@
+﻿
+using BusinessLayer.Implementations;
+using BusinessLayer.Interfaces;
+using DataAccessLayer.DBContext;
+using DataAccessLayer.Repositories.GeneralRepository;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<HRMSContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// --------------------
+// 2️⃣ Configure CORS
+// --------------------
+var corsPolicyName = "AllowAllOrigins"; // You can name it anything
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: corsPolicyName,
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+// Add services to the container.
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped(typeof(IGeneralRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IRegionService, RegionService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMenuMasterService, MenuMasterService>();
+builder.Services.AddScoped<IRoleMasterService, RoleMasterService>();
+builder.Services.AddScoped<IMenuRoleService, MenuRoleService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IDesignationService, DesignationService>();
+
+builder.Services.AddScoped<IGenderService, GenderService>();
+builder.Services.AddScoped<IEmployeeResignationService, EmployeeResignationService>();
+
+builder.Services.AddScoped<IemployeeService, employeeService>();
+builder.Services.AddScoped<IadminService, adminService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IExpenseService, ExpenseService>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
+builder.Services.AddScoped<IEmployeeKpiService, EmployeeKpiService>();
+builder.Services.AddScoped<IManagerKpiReviewService, ManagerKpiReviewService>();
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+// --------------------
+// 4️⃣ Use CORS
+// --------------------
+app.UseCors(corsPolicyName);
+app.UseHttpsRedirection();
+// 🔹 Enable static files (wwwroot)
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.WebRootPath, "Uploads")),
+    RequestPath = "/Uploads"
+});
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
